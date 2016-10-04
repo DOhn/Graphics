@@ -1,31 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include "3dmath.h"
+#include "struct.h"
 // Plymorphism in C
-
-typedef struct {
-  int kind; // 0 = plane, 1 = sphere, 2 = teapot
-  double color[3];
-  
-  union {
-    struct {
-      double center[3];
-      double radius;
-    } cylinder;
-
-    struct {
-      double center[3];
-      double radius;
-    } sphere;
-
-    struct {
-      double position[3];
-      double normal[3];
-    } plane;
-  };
-} Object;
-
 
 static inline double sqr(double v) {
   return v*v;
@@ -113,7 +87,7 @@ double plane_intersection(double *Ro, double *Rd, double *Norm, double *Pos) {
 int main() {
 
   Object** objects;
-  objects = malloc(sizeof(Object*)*3);
+  objects = malloc(sizeof(Object*)*10);
   objects[0] = malloc(sizeof(Object));
   objects[0]->kind = 0;
   
@@ -121,30 +95,30 @@ int main() {
   objects[1]->kind = 1;
 
   // Objects for sphere struct.  Needs vector of center and radius.
-  objects[1]->sphere.center[0] = 2;
+  objects[1]->sphere.center[0] = 0;
   objects[1]->sphere.center[1] = 0;
-  objects[1]->sphere.center[2] = 2;
+  objects[1]->sphere.center[2] = 10;
 
-  objects[1]->sphere.radius = 2.5;
+  objects[1]->sphere.radius = 8;
 
   // Objects for plane.  Needs vector of positions and vector for of Norm.
-  objects[0]->plane.position[0] = 1;
-  objects[0]->plane.position[1] = 1;
-  objects[0]->plane.position[2] = 1;
+  objects[0]->plane.position[0] = .2;
+  objects[0]->plane.position[1] = .2;
+  objects[0]->plane.position[2] = .2;
 
-  objects[0]->plane.normal[0] = 1;
-  objects[0]->plane.normal[1] = 1;
-  objects[0]->plane.normal[2] = 0;
+  objects[0]->plane.normal[0] = 0;
+  objects[0]->plane.normal[1] = 0;
+  objects[0]->plane.normal[2] = 1;
 
   //objects[1] = NULL;
   
   double cx = 0;;
   double cy = 0;
-  double h = 7;
-  double w = 5;
+  double h = 100;
+  double w = 100;
 
-  int M = 20;
-  int N = 20;
+  int M = 80;
+  int N = 80;
   int y, x, i;
 
   double pixheight = h / M;
@@ -156,14 +130,15 @@ int main() {
       // Rd = normalize(P - Ro)
       double Rd[3] = {cx - (w/2) + pixwidth * (x + 0.5),
 	                    cy - (h/2) + pixheight * (y + 0.5), 1};
-      
+      int current;
       normalize(Rd);
       double best_t = INFINITY;
       for (i=0; objects[i] != 0; i += 1) {
 	      double t = 0;
 
   	    switch(objects[i]->kind) {
-    	    case 0:
+    	    current = i;
+          case 0:
     	      t = plane_intersection(Ro, Rd, objects[i]->plane.position, objects[i]->plane.normal);
     	      break;
           case 1:
@@ -180,7 +155,14 @@ int main() {
       }
     
       if (best_t > 0 && best_t != INFINITY) {
-  	    printf("#");
+  	    switch(objects[current]->kind) {
+          case 0:
+            printf("#");
+            break;
+          case 1:
+            printf("0");
+            break;
+          }
       } else {
   	    printf(".");
       }
