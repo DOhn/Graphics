@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "struct.h"
 
 int line = 1;
 
@@ -131,8 +129,8 @@ void read_scene(char* filename) {
       // Parse the object
       char* key = next_string(json);
       if (strcmp(key, "type") != 0) {
-	fprintf(stderr, "Error: Expected \"type\" key on line number %d.\n", line);
-	exit(1);
+	     fprintf(stderr, "Error: Expected \"type\" key on line number %d.\n", line);
+	     exit(1);
       }
 
       skip_ws(json);
@@ -142,60 +140,103 @@ void read_scene(char* filename) {
       skip_ws(json);
 
       char* value = next_string(json);
+      int i;
 
+      // 0 = plane, 1 = sphere, 2 = camera
       if (strcmp(value, "camera") == 0) {
-      } else if (strcmp(value, "sphere") == 0) {
-      } else if (strcmp(value, "plane") == 0) {
+        object.objValue[object.objPos-1].kind = 2;
+        i = 2;
+      } 
+      else if (strcmp(value, "sphere") == 0) {
+        object.objValue[object.objPos-1].kind = 1;
+        i = 1;
+      } 
+      else if (strcmp(value, "plane") == 0) {
+        object.objValue[object.objPos-1].kind = 0;
+        i = 0;
       } else {
-	fprintf(stderr, "Error: Unknown type, \"%s\", on line number %d.\n", value, line);
-	exit(1);
+	      fprintf(stderr, "Error: Unknown type, \"%s\", on line number %d.\n", value, line);
+	      exit(1);
       }
 
       skip_ws(json);
 
       while (1) {
-	// , }
-	c = next_c(json);
-	if (c == '}') {
-	  // stop parsing this object
-	  break;
-	} else if (c == ',') {
-	  // read another field
-	  skip_ws(json);
-	  char* key = next_string(json);
-	  skip_ws(json);
-	  expect_c(json, ':');
-	  skip_ws(json);
-	  if ((strcmp(key, "width") == 0) ||
-	      (strcmp(key, "height") == 0) ||
-	      (strcmp(key, "radius") == 0)) {
-	    double value = next_number(json);
-	  } else if ((strcmp(key, "color") == 0) ||
-		     (strcmp(key, "position") == 0) ||
-		     (strcmp(key, "normal") == 0)) {
-	    double* value = next_vector(json);
-	  } else {
-	    fprintf(stderr, "Error: Unknown property, \"%s\", on line %d.\n",
-		    key, line);
-	    //char* value = next_string(json);
-	  }
-	  skip_ws(json);
-	} else {
-	  fprintf(stderr, "Error: Unexpected value on line %d\n", line);
-	  exit(1);
-	}
+	      // , }
+      	c = next_c(json);
+      	if (c == '}') {
+        	  // stop parsing this object
+        	  break;
+      	} 
+        else if (c == ',') {
+        	  // read another field
+        	  skip_ws(json);
+        	  char* key = next_string(json);
+        	  skip_ws(json);
+        	  expect_c(json, ':');
+        	  skip_ws(json);
+      	  if ((strcmp(key, "width") == 0) || (strcmp(key, "height") == 0) || (strcmp(key, "radius") == 0)) {
+      	      double value = next_number(json);
+              if (value <= 0) {
+                fprintf(stderr, "Error: Value of Width, Height, or Radius is 0 or below.")
+              }
+              else if (strcmp(key, "radius") == 0) {
+                object.objValue[object.objPos-1].sphere.radius = value;
+              }
+              else if (strcmp(key, "height") == 0) {
+                object.objValue[object.objPos-1].camera.height = value;
+              }
+              else if (strcmp(key, "width") == 0) {
+                object.objValue[object.objPos-1].camera.width = value;
+              }
+            }
+          } 
+          else if ((strcmp(key, "color") == 0) || (strcmp(key, "position") == 0) || (strcmp(key, "normal") == 0)) {
+      	      double* value = next_vector(json);
+              if (strcmp(key, "normal" == 0)) {
+                object.objValue[object.objPos-1].plane.normal[0] = value[0];
+                object.objValue[object.objPos-1].plane.normal[1] = value[1];
+                object.objValue[object.objPos-1].plane.normal[2] = value[2];
+              }
+              else if (strcmp(key, "position" == 0)) {
+                if (i == 0) {
+                  object.objValue[object.objPos-1].plane.position[0] = value[0];
+                  object.objValue[object.objPos-1].plane.position[1] = value[1];
+                  object.objValue[object.objPos-1].plane.position[2] = value[2];
+                } 
+                else {
+                  object.objValue[object.objPos-1].sphere.position[0] = value[0];
+                  object.objValue[object.objPos-1].sphere.position[1] = value[1];
+                  object.objValue[object.objPos-1].sphere.position[2] = value[2];
+                }
+              }
+              else if (strcmp(key, "color" == 0)) {
+                object.objValue[object.objPos-1].sphere.color[0] = value[0];
+                object.objValue[object.objPos-1].sphere.color[1] = value[1];
+                object.objValue[object.objPos-1].sphere.color[2] = value[2];
+      	      }
+          else {
+      	    fprintf(stderr, "Error: Unknown property, \"%s\", on line %d.\n", key, line);
+      	    //char* value = next_string(json);
+      	  }
+      	  skip_ws(json);
+      	} else {
+        	  fprintf(stderr, "Error: Unexpected value on line %d\n", line);
+        	  exit(1);
+        	}
       }
       skip_ws(json);
       c = next_c(json);
       if (c == ',') {
-	// noop
-	skip_ws(json);
-      } else if (c == ']') {
-	fclose(json);
-	return;
+        	// noop
+        	skip_ws(json);
+      }
+      else if (c == ']') {
+        	fclose(json);
+        	return;
       } else {
-	fprintf(stderr, "Error: Expecting ',' or ']' on line %d.\n", line);
-	exit(1);
+        	fprintf(stderr, "Error: Expecting ',' or ']' on line %d.\n", line);
+        	exit(1);
       }
     }
   }
