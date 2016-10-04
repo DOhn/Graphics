@@ -4,3 +4,9 @@ all:
 
 clean:
 	rm parser
+
+ray:
+	./raycaster
+
+parse:
+	./parser input.json
