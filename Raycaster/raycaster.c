@@ -37,92 +37,69 @@ static inline void normalize(double* v) {
   v[2] /= len;
 }
 
-double sphere_intersection(double *Ro, double *Rd) {
+double sphere_intersection(double *Ro, double *Rd, double *Center, double R) {
+  double num_a, num_b, num_c, sol_a, sol_b;
 
-  return 0;
+  num_a = sqr(Rd[0]) + sqr(Rd[1]) + sqr(Rd[2]);
+  num_b = 2 * (Rd[0]*Ro[0]-Center[0]) + Rd[1]*(Ro[1]-Center[1]) + Rd[2]*(Ro[2]*(Ro[2]-Center[2]));
+  num_c = sqr(Ro[0]-Center[0]) + sqr(Ro[1]-Center[1]) + sqr(Ro[2]-Center[2]) - sqr(R);
+
+  if (num_a > 1.001 || num_a < 0.9999) {
+    printf("Variable a is equvilent to: %lf\n", num_a);
+    fprintf(stderr,"Error:  Direction of the ray was not normalized. \n");
+    exit(1);
+  }
+
+  double dist = sqr(num_b) - 4*num_a*num_c;
+
+  if (dist < 0) {
+    return -1;  
+  } else if (dist == 0) {
+    sol_a = -1 * (num_b / (2*num_a));
+    sol_b = -1 * (num_b / (2 * num_a));
+  } else {
+    sol_a = (-1*num_b - sqrt(sqrt(num_b) - 4 * num_c))/2;
+    sol_b = (-1*num_b + sqrt(sqrt(num_b) - 4 * num_c))/2;
+  }
+
+  if (sol_a < 0 && sol_b < 0) {
+    return -1;
+  } else if (sol_a < 0 && sol_b > 0) {
+    return sol_a;
+  } else if (sol_a > 0 && sol_b < 0) {
+    return sol_a;
+  } else {
+    if (sol_a <= sol_b) {
+      return sol_a;
+    } else {
+      return sol_b;
+    }
+  }
 }
 
 
+
 double plane_intersection(double *Ro, double *Rd, double *normal, double *pos) {
-  double a, d;
+  double temp_a, temp_d;
   normalize(normal);
+  V3 a_vector;
 
-  a = v3_dot(normal, Rd);
+  temp_a = v3_dot(normal, Rd);
 
-  if(fabs(a) < .0001) {
+  if(fabs(temp_a) < .0001) {
     return -1;
   }
-
-  V3 a_vector;
+  
   v3_sub(pos, Ro, a_vector);
-  d = v3_dot(a_vector, normal);
+  temp_d = v3_dot(a_vector, normal);
 
-  double t = d/a;
+  double t = temp_d/temp_a;
 
   if (t < 0.0) {
     return -1;
   }
 
   return t;
-}
-
-double cylinder_intersection(double* Ro, double* Rd, double* C, double r) {
-  // Step 1. Find the equation for the object you are
-  // interested in..  (e.g., cylinder)
-  //
-  // x^2 + z^2 = r^2
-  //
-  // Step 2. Parameterize the equation with a center point
-  // if needed
-  //
-  // (x-Cx)^2 + (z-Cz)^2 = r^2
-  //
-  // Step 3. Substitute the eq for a ray into our object
-  // equation.
-  //
-  // (Rox + t*Rdx - Cx)^2 + (Roz + t*Rdz - Cz)^2 - r^2 = 0
-  //
-  // Step 4. Solve for t.
-  //
-  // Step 4a. Rewrite the equation (flatten).
-  //
-  // -r^2 +
-  // t^2 * Rdx^2 +
-  // t^2 * Rdz^2 +
-  // 2*t * Rox * Rdx -
-  // 2*t * Rdx * Cx +
-  // 2*t * Roz * Rdz -
-  // 2*t * Rdz * Cz +
-  // Rox^2 -
-  // 2*Rox*Cx +
-  // Cx^2 +
-  // Roz^2 -
-  // 2*Roz*Cz +
-  // Cz^2 = 0
-  //
-  // Steb 4b. Rewrite the equation in terms of t.
-  //
-  // t^2 * (Rdx^2 + Rdz^2) +
-  // t * (2 * (Rox * Rdx - Rdx * Cx + Roz * Rdz - Rdz * Cz)) +
-  // Rox^2 - 2*Rox*Cx + Cx^2 + Roz^2 - 2*Roz*Cz + Cz^2 - r^2 = 0
-  //
-  // Use the quadratic equation to solve for t..
-  double a = (sqr(Rd[0]) + sqr(Rd[2]));
-  double b = (2 * (Ro[0] * Rd[0] - Rd[0] * C[0] + Ro[2] * Rd[2] - Rd[2] * C[2]));
-  double c = sqr(Ro[0]) - 2*Ro[0]*C[0] + sqr(C[0]) + sqr(Ro[2]) - 2*Ro[2]*C[2] + sqr(C[2]) - sqr(r);
-
-  double det = sqr(b) - 4 * a * c;
-  if (det < 0) return -1;
-
-  det = sqrt(det);
-  
-  double t0 = (-b - det) / (2*a);
-  if (t0 > 0) return t0;
-
-  double t1 = (-b + det) / (2*a);
-  if (t1 > 0) return t1;
-
-  return -1;
 }
 
 int main() {
