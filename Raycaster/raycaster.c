@@ -1,6 +1,14 @@
 #include "struct.h"
 // Plymorphism in C
 
+void shadePixel(double *Col, Img *image, int i, int j) {
+  image->color[(int)(i * image->width*4 + j*4+0)] = (char)Col[0];
+  image->color[(int)(i * image->width*4 + j*4+1)] = (char)Col[1];
+  image->color[(int)(i * image->width*4 + j*4+2)] = (char)Col[2];
+  image->color[(int)(i * image->width*4 + j*4+3)] = 255;
+
+}
+
 static inline double sqr(double v) {
   return v*v;
 }
@@ -74,6 +82,7 @@ double plane_intersection(double *Ro, double *Rd, double *Norm, double *Pos) {
 
   temp_d = v3_dot(a_vector, Norm);
   double t = -(temp_d/temp_a);
+  double colA = 0;
 
   // If value of t is below 0 return 0.
   if (t < 0.0) {
@@ -84,92 +93,127 @@ double plane_intersection(double *Ro, double *Rd, double *Norm, double *Pos) {
   return t;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
 
-  Object** objects;
-  objects = malloc(sizeof(Object*)*10);
-  objects[0] = malloc(sizeof(Object));
-  objects[0]->kind = "plane";
+  if (argc != 5) {
+    fprintf(stderr, "Error: Must be four arguments.");
+    exit(1);
+  }
+
+
+  FILE* fput = fopen(argv[3], "rb");
+
+  if (fput == NULL) {
+    fprintf(stderr, "Error: JSON File failed to load or open.  Make sure it exists.");
+    exit(1);
+  } 
+
+  struct objValues objects;
+  int numObjs, x, y;
+
+  int cameraType = 0;
+  double camH;
+  double camW;
+
+  int sphKind = 1;
+  double sphColX, sphColY, sphColZ;
+  double sphPosX;
+  double sphPosY;
+  double sphPosZ;
+  double radius;
+
+  int plnKind = 2;
+  double plnColX, plnColY, plnColZ;
+  double plnPosX, plnPosY, plnPosZ;
+  double plnNormX, plnNormY, plnNormZ;
+
   
-  objects[1] = malloc(sizeof(Object));
-  objects[1]->kind = "sphere";
-
-  // Objects for sphere struct.  Needs vector of center and radius.
-  objects[1]->sphere.center[0] = 0;
-  objects[1]->sphere.center[1] = 0;
-  objects[1]->sphere.center[2] = 10;
-
-  objects[1]->sphere.radius = 8;
-
-  // Objects for plane.  Needs vector of positions and vector for of Norm.
-  objects[0]->plane.position[0] = .2;
-  objects[0]->plane.position[1] = .2;
-  objects[0]->plane.position[2] = .2;
-
-  objects[0]->plane.normal[0] = 0;
-  objects[0]->plane.normal[1] = 0;
-  objects[0]->plane.normal[2] = 1;
-
-  //objects[1] = NULL;
+  int M = atoi(argv[1]);
+  int N = atoi(argv[2]);
   
-  double cx = 0;;
-  double cy = 0;
-  double h = 100;
-  double w = 100;
+  objects = read_scene(fput);
 
-  int M = 80;
-  int N = 80;
-  int y, x, i;
+  // Extracting from JSON file
+  numObjs = objects.objPos;
 
-  double pixheight = h / M;
-  double pixwidth = w / N;
+  int i;
 
-  for (y = 0; y < M; y += 1) {
-    for (x = 0; x < N; x += 1) {
-      double Ro[3] = {0, 0, 0};
-      // Rd = normalize(P - Ro)
-      double Rd[3] = {cx - (w/2) + pixwidth * (x + 0.5),
-	                    cy - (h/2) + pixheight * (y + 0.5), 1};
-      int current;
-      normalize(Rd);
-      double best_t = INFINITY;
-      for (i=0; objects[i] != 0; i += 1) {
-	      double t = 0;
-        current = i;
+  int mNum = 6;
 
-  	    if(objects[i]->kind == "plane") {
-    	    t = plane_intersection(Ro, Rd, objects[i]->plane.position, objects[i]->plane.normal);
-    	    break;
-    	  }
-        else if (objects[i]->kind == "sphere") {
-          t = sphere_intersection(Ro, Rd, objects[i]->sphere.center, objects[i]->sphere.radius);
-          break;
-        } else {
-          exit(1);
-        }
-
-  	    if (t > 0 && t < best_t) {
-          best_t = t; 
-        }
-      }
-    
-      if (best_t > 0 && best_t != INFINITY) {
-  	    if (objects[i]->kind == "plane") {
-          printf("#");
-          break;
-        }
-        else if (objects[i]->kind == "sphere") {
-          printf("0");
-          break;
-        }
-        else {
-  	      printf(".");
-          break;
-        }
-      }
-    printf("\n");
+  // loop through the number of objects
+  for (i = 0; i < numObjs; i++) {
+    // if there is a camera objects, set the width and height of the camera
+    if (objects.objValue[i].camera.width && objects.objValue[i].camera.height) {
+      printf("There is a camera\n");
+      camW = objects.objValue[i].camera.width;
+      camH = objects.objValue[i].camera.height;
     }
   }
-  
+
+  // error check for the camera width and height
+  if (!camW || !camH) {
+    fprintf(stderr, "ERROR: There is no valid camera width or height\n");
+    exit(1);
+  }
+
+  // set the pixel width and height
+  double pixheight = camH / M;
+  double pixwidth = camW / N;
+
+  // create the image
+  Img *image = (Img *)malloc(sizeof(Img));
+  image->height = N;
+  image->width = M;
+  image->color = (char*)malloc(sizeof(char) * image->height * image->width * 4);
+
+
+  // loop through the pixels
+  for (y = 0; y < M; y++) {
+    for (x = 0; x < N; x++) {
+      printf("inside for\n");
+      double Ro[3] = {0, 0, 0};
+
+      double Rd[3] = { objects.objValue[i].sphere.center[0] - (camW/2) + pixwidth * (x + 0.5), objects.objValue[i].sphere.center[1] - (camH/2) + pixheight * (y + 0.5), 1 };
+      normalize(Rd);
+
+      int colHelp = 0;
+      double best_t = INFINITY;
+      // loop through the objects figuring out which one to trace
+      for (i=0; i < numObjs; i++) {
+        printf("hello\n");
+        double t = 0;
+
+        // if the current objects is a sphere then call intersect
+        if (objects.objValue[i].sphere.center && objects.objValue[i].sphere.radius) {
+          t = sphere_intersection(Ro, Rd, objects.objValue[i].sphere.center, objects.objValue[i].sphere.radius);
+          printf("T\n");
+        // if the current objects is a plane then call intersect
+        } else if (objects.objValue[i].plane.position && objects.objValue[i].plane.normal) {
+          t = plane_intersection(Ro, Rd, objects.objValue[i].plane.position, objects.objValue[i].plane.normal);
+        }
+        //printf("This is T: %lf\n", t);
+        if (t > 0 && t < best_t) {
+          best_t = t;
+          colHelp = i;
+        }
+      }
+      if (best_t > 0 && best_t != INFINITY) {
+        if (objects.objValue[colHelp].sphere.center && objects.objValue[colHelp].sphere.radius) {
+          shadePixel(objects.objValue[colHelp].color, image, y, x);
+          printf("Shaded Sphere\n");
+        } else if (objects.objValue[i].plane.position && objects.objValue[i].plane.normal) {
+          shadePixel(objects.objValue[colHelp].color, image, y, x);
+          printf("Shaded plane\n");
+        }
+        printf("#");
+      } else {
+        printf(".");
+      }
+    }
+    printf("\n");
+  };
+
+  FILE* output = fopen(argv[4], "W+");
+  ppmMaker(image, output, mNum);
   return 0;
 }
