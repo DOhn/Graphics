@@ -89,10 +89,10 @@ int main() {
   Object** objects;
   objects = malloc(sizeof(Object*)*10);
   objects[0] = malloc(sizeof(Object));
-  objects[0]->kind = 0;
+  objects[0]->kind = "plane";
   
   objects[1] = malloc(sizeof(Object));
-  objects[1]->kind = 1;
+  objects[1]->kind = "sphere";
 
   // Objects for sphere struct.  Needs vector of center and radius.
   objects[1]->sphere.center[0] = 0;
@@ -135,19 +135,18 @@ int main() {
       double best_t = INFINITY;
       for (i=0; objects[i] != 0; i += 1) {
 	      double t = 0;
+        current = i;
 
-  	    switch(objects[i]->kind) {
-    	    current = i;
-          case 0:
-    	      t = plane_intersection(Ro, Rd, objects[i]->plane.position, objects[i]->plane.normal);
-    	      break;
-          case 1:
-            t = sphere_intersection(Ro, Rd, objects[i]->sphere.center, objects[i]->sphere.radius);
-            break;
-      	  default:
-      	    // Horrible error
-      	    exit(1);
+  	    if(objects[i]->kind == "plane") {
+    	    t = plane_intersection(Ro, Rd, objects[i]->plane.position, objects[i]->plane.normal);
+    	    break;
     	  }
+        else if (objects[i]->kind == "sphere") {
+          t = sphere_intersection(Ro, Rd, objects[i]->sphere.center, objects[i]->sphere.radius);
+          break;
+        } else {
+          exit(1);
+        }
 
   	    if (t > 0 && t < best_t) {
           best_t = t; 
@@ -155,19 +154,21 @@ int main() {
       }
     
       if (best_t > 0 && best_t != INFINITY) {
-  	    switch(objects[current]->kind) {
-          case 0:
-            printf("#");
-            break;
-          case 1:
-            printf("0");
-            break;
-          }
-      } else {
-  	    printf(".");
+  	    if (objects[i]->kind == "plane") {
+          printf("#");
+          break;
+        }
+        else if (objects[i]->kind == "sphere") {
+          printf("0");
+          break;
+        }
+        else {
+  	      printf(".");
+          break;
+        }
       }
-    }
     printf("\n");
+    }
   }
   
   return 0;
