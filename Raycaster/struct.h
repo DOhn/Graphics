@@ -1,3 +1,6 @@
+// #ifndef JSON_READ_H
+// #define JSON_READ_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,14 +11,14 @@
 
 
 typedef struct {
-  int kind; // 0 = plane, 1 = sphere, 2 = teapot
+  char *kind;
   double color[3];
   
   union {
     struct {
-      double center[3];
-      double radius;
-    } cylinder;
+      double width;
+      double height;
+    } camera;
 
     struct {
       double center[3];
@@ -29,3 +32,10 @@ typedef struct {
   };
 } Object;
 
+typedef struct objValues {
+	Object *objValue;
+	size_t objPos;
+} objValues;
+
+//struct objValues read_scene(FILE* json);
+//#endif
