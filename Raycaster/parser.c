@@ -98,14 +98,8 @@ double* next_vector(FILE* json) {
 }
 
 //CHAGNE THIS SHIT 
-void read_scene(char* filename) {
+struct objValues read_scene(FILE* json) {
   int c;
-  FILE* json = fopen(filename, "r");
-
-  if (json == NULL) {
-    fprintf(stderr, "Error: Could not open file \"%s\"\n", filename);
-    exit(1);
-  }
   
   skip_ws(json);
   
@@ -119,13 +113,12 @@ void read_scene(char* filename) {
   obj.objPos = 0;
 
   while (1) {
-    
 
     c = fgetc(json);
     if (c == ']') {
       fprintf(stderr, "Error: This is the worst scene file EVER.\n");
       fclose(json);
-      return;
+      return obj;
     }
     if (c == '{') {
       skip_ws(json);
@@ -152,14 +145,17 @@ void read_scene(char* filename) {
       if (strcmp(value, "camera") == 0) {
         obj.objValue[obj.objPos-1].kind = value;
         i = 2;
+        printf("--------------%s---------\n", value);
       } 
       else if (strcmp(value, "sphere") == 0) {
         obj.objValue[obj.objPos-1].kind = value;
         i = 1;
+        printf("--------------%s---------\n", value);
       } 
       else if (strcmp(value, "plane") == 0) {
         obj.objValue[obj.objPos-1].kind = value;
         i = 0;
+        printf("--------------%s---------\n", value);
       } else {
 	      fprintf(stderr, "Error: Unknown type, \"%s\", on line number %d.\n", value, line);
 	      exit(1);
@@ -203,6 +199,7 @@ void read_scene(char* filename) {
           else if ((strcmp(key, "color") == 0) || (strcmp(key, "position") == 0) || (strcmp(key, "normal") == 0)) {
     	      double* value = next_vector(json);
             if (strcmp(key, "normal") == 0) {
+              printf("WE MADE IT\n");
               obj.objValue[obj.objPos-1].plane.normal[0] = value[0];
               obj.objValue[obj.objPos-1].plane.normal[1] = value[1];
               obj.objValue[obj.objPos-1].plane.normal[2] = value[2];
@@ -243,16 +240,11 @@ void read_scene(char* filename) {
       }
       else if (c == ']') {
         	fclose(json);
-        	return;
+        	return obj;
       } else {
         	fprintf(stderr, "Error: Expecting ',' or ']' on line %d.\n", line);
         	exit(1);
       }
     }
   }
-}
-
-int main(int c, char** argv) {
-  read_scene(argv[1]);
-  return 0;
 }
