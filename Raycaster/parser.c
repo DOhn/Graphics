@@ -97,7 +97,7 @@ double* next_vector(FILE* json) {
   return v;
 }
 
-
+//CHAGNE THIS SHIT 
 void read_scene(char* filename) {
   int c;
   FILE* json = fopen(filename, "r");
@@ -111,12 +111,16 @@ void read_scene(char* filename) {
   
   // Find the beginning of the list
   expect_c(json, '[');
-
   skip_ws(json);
 
   // Find the objects
+  objValues obj;
+  obj.objValue = NULL;
+  obj.objPos = 0;
 
   while (1) {
+    
+
     c = fgetc(json);
     if (c == ']') {
       fprintf(stderr, "Error: This is the worst scene file EVER.\n");
@@ -134,25 +138,27 @@ void read_scene(char* filename) {
       }
 
       skip_ws(json);
-
       expect_c(json, ':');
-
       skip_ws(json);
+
+      obj.objPos += 1;
+      obj.objValue = realloc(obj.objValue, sizeof(Object)*obj.objPos);
 
       char* value = next_string(json);
       int i;
+      obj.objValue[obj.objPos-1].kind = value;
 
       // 0 = plane, 1 = sphere, 2 = camera
       if (strcmp(value, "camera") == 0) {
-        object.objValue[object.objPos-1].kind = 2;
+        obj.objValue[obj.objPos-1].kind = value;
         i = 2;
       } 
       else if (strcmp(value, "sphere") == 0) {
-        object.objValue[object.objPos-1].kind = 1;
+        obj.objValue[obj.objPos-1].kind = value;
         i = 1;
       } 
       else if (strcmp(value, "plane") == 0) {
-        object.objValue[object.objPos-1].kind = 0;
+        obj.objValue[obj.objPos-1].kind = value;
         i = 0;
       } else {
 	      fprintf(stderr, "Error: Unknown type, \"%s\", on line number %d.\n", value, line);
@@ -169,61 +175,65 @@ void read_scene(char* filename) {
         	  break;
       	} 
         else if (c == ',') {
-        	  // read another field
-        	  skip_ws(json);
-        	  char* key = next_string(json);
-        	  skip_ws(json);
-        	  expect_c(json, ':');
-        	  skip_ws(json);
+      	  // read another field
+      	  skip_ws(json);
+      	  char* key = next_string(json);
+      	  skip_ws(json);
+      	  expect_c(json, ':');
+      	  skip_ws(json);
       	  if ((strcmp(key, "width") == 0) || (strcmp(key, "height") == 0) || (strcmp(key, "radius") == 0)) {
-      	      double value = next_number(json);
-              if (value <= 0) {
-                fprintf(stderr, "Error: Value of Width, Height, or Radius is 0 or below.")
-              }
-              else if (strcmp(key, "radius") == 0) {
-                object.objValue[object.objPos-1].sphere.radius = value;
-              }
-              else if (strcmp(key, "height") == 0) {
-                object.objValue[object.objPos-1].camera.height = value;
-              }
-              else if (strcmp(key, "width") == 0) {
-                object.objValue[object.objPos-1].camera.width = value;
+    	      double value = next_number(json);
+            printf("%s\n", key);
+            if (value <= 0) {
+              fprintf(stderr, "Error: Value of Width, Height, or Radius is 0 or below.");
+            }
+            else if (strcmp(key, "radius") == 0) {
+              obj.objValue[obj.objPos-1].sphere.radius = value;
+              printf("%lf\n", value);
+            }
+            else if (strcmp(key, "height") == 0) {
+              obj.objValue[obj.objPos-1].camera.height = value;
+              printf("%lf\n", value);
+            }
+            else if (strcmp(key, "width") == 0) {
+              obj.objValue[obj.objPos-1].camera.width = value;
+              printf("%lf\n", value);
+            }
+          }
+          else if ((strcmp(key, "color") == 0) || (strcmp(key, "position") == 0) || (strcmp(key, "normal") == 0)) {
+    	      double* value = next_vector(json);
+            if (strcmp(key, "normal") == 0) {
+              obj.objValue[obj.objPos-1].plane.normal[0] = value[0];
+              obj.objValue[obj.objPos-1].plane.normal[1] = value[1];
+              obj.objValue[obj.objPos-1].plane.normal[2] = value[2];
+            }
+            else if (strcmp(key, "position") == 0) {
+              if (i == 0) {
+                obj.objValue[obj.objPos-1].plane.position[0] = value[0];
+                obj.objValue[obj.objPos-1].plane.position[1] = value[1];
+                obj.objValue[obj.objPos-1].plane.position[2] = value[2];
+              } 
+              else {
+                obj.objValue[obj.objPos-1].sphere.center[0] = value[0];
+                obj.objValue[obj.objPos-1].sphere.center[1] = value[1];
+                obj.objValue[obj.objPos-1].sphere.center[2] = value[2];
               }
             }
-          } 
-          else if ((strcmp(key, "color") == 0) || (strcmp(key, "position") == 0) || (strcmp(key, "normal") == 0)) {
-      	      double* value = next_vector(json);
-              if (strcmp(key, "normal" == 0)) {
-                object.objValue[object.objPos-1].plane.normal[0] = value[0];
-                object.objValue[object.objPos-1].plane.normal[1] = value[1];
-                object.objValue[object.objPos-1].plane.normal[2] = value[2];
-              }
-              else if (strcmp(key, "position" == 0)) {
-                if (i == 0) {
-                  object.objValue[object.objPos-1].plane.position[0] = value[0];
-                  object.objValue[object.objPos-1].plane.position[1] = value[1];
-                  object.objValue[object.objPos-1].plane.position[2] = value[2];
-                } 
-                else {
-                  object.objValue[object.objPos-1].sphere.position[0] = value[0];
-                  object.objValue[object.objPos-1].sphere.position[1] = value[1];
-                  object.objValue[object.objPos-1].sphere.position[2] = value[2];
-                }
-              }
-              else if (strcmp(key, "color" == 0)) {
-                object.objValue[object.objPos-1].sphere.color[0] = value[0];
-                object.objValue[object.objPos-1].sphere.color[1] = value[1];
-                object.objValue[object.objPos-1].sphere.color[2] = value[2];
-      	      }
+            else if (strcmp(key, "color") == 0) {
+              obj.objValue[obj.objPos-1].color[0] = value[0];
+              obj.objValue[obj.objPos-1].color[1] = value[1];
+              obj.objValue[obj.objPos-1].color[2] = value[2];
+    	      }
+          }
           else {
       	    fprintf(stderr, "Error: Unknown property, \"%s\", on line %d.\n", key, line);
       	    //char* value = next_string(json);
       	  }
       	  skip_ws(json);
       	} else {
-        	  fprintf(stderr, "Error: Unexpected value on line %d\n", line);
-        	  exit(1);
-        	}
+          fprintf(stderr, "Error: Unexpected value on line %d\n", line);
+        	exit(1);
+        }
       }
       skip_ws(json);
       c = next_c(json);
