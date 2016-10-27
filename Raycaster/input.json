@@ -1,26 +1,19 @@
 [
 	{
 		"type": "camera",
-		"width": 0.5,
-		"height": 0.5
+		"width": 1,
+		"height": 1
 	},
 	{
 		"type": "sphere",
-		"color": [1.0,0,0],
-		"position": [0,2,5],
-		"radius": 2
+		"color": [1,0,0],
+		"position": [1,1,10],
+		"radius": 1
 	},
 	{
 		"type": "plane",
-		"color": [0,0,1.0],
-		"position": [0,69,0],
+		"color": [0,1,0],
+		"position": [0,-1,0],
 		"normal": [0,1,0]
-	},
-	{
-		"type": "sphere",
-		"color": [1.0,0,0],
-		"position": [2,0,1],
-		"radius": 3
-
 	}
 ]
