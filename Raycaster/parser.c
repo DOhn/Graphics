@@ -122,9 +122,9 @@ struct objValues read_scene(FILE* json) {
     }
     if (c == '{') {
       skip_ws(json);
-    
       // Parse the object
       char* key = next_string(json);
+
       if (strcmp(key, "type") != 0) {
 	     fprintf(stderr, "Error: Expected \"type\" key on line number %d.\n", line);
 	     exit(1);
@@ -145,17 +145,14 @@ struct objValues read_scene(FILE* json) {
       if (strcmp(value, "camera") == 0) {
         obj.objValue[obj.objPos-1].kind = value;
         i = 2;
-        printf("--------------%s---------\n", value);
       } 
       else if (strcmp(value, "sphere") == 0) {
         obj.objValue[obj.objPos-1].kind = value;
         i = 1;
-        printf("--------------%s---------\n", value);
       } 
       else if (strcmp(value, "plane") == 0) {
         obj.objValue[obj.objPos-1].kind = value;
         i = 0;
-        printf("--------------%s---------\n", value);
       } else {
 	      fprintf(stderr, "Error: Unknown type, \"%s\", on line number %d.\n", value, line);
 	      exit(1);
@@ -185,21 +182,17 @@ struct objValues read_scene(FILE* json) {
             }
             else if (strcmp(key, "radius") == 0) {
               obj.objValue[obj.objPos-1].sphere.radius = value;
-              printf("%lf\n", value);
             }
             else if (strcmp(key, "height") == 0) {
               obj.objValue[obj.objPos-1].camera.height = value;
-              printf("%lf\n", value);
             }
             else if (strcmp(key, "width") == 0) {
               obj.objValue[obj.objPos-1].camera.width = value;
-              printf("%lf\n", value);
             }
           }
           else if ((strcmp(key, "color") == 0) || (strcmp(key, "position") == 0) || (strcmp(key, "normal") == 0)) {
     	      double* value = next_vector(json);
             if (strcmp(key, "normal") == 0) {
-              printf("WE MADE IT\n");
               obj.objValue[obj.objPos-1].plane.normal[0] = value[0];
               obj.objValue[obj.objPos-1].plane.normal[1] = value[1];
               obj.objValue[obj.objPos-1].plane.normal[2] = value[2];
@@ -217,6 +210,7 @@ struct objValues read_scene(FILE* json) {
               }
             }
             else if (strcmp(key, "color") == 0) {
+              //printf("Parser: %lf %lf %lf \n", value[0], value[1], value[2]);
               obj.objValue[obj.objPos-1].color[0] = value[0];
               obj.objValue[obj.objPos-1].color[1] = value[1];
               obj.objValue[obj.objPos-1].color[2] = value[2];
