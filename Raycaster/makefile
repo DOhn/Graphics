@@ -1,11 +1,8 @@
 all:
-	gcc -o raycaster raycaster.c -lm
+	gcc -o raycaster image.c parser.c raycaster.c -lm
 
 clean:
-	rm parser
+	rm raycaster
 
-ray:
-	./raycaster
-
-parse:
-	./parser input.json
+run:
+	./raycaster 500 500 input.json output.ppm
