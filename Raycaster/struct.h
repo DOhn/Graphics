@@ -1,11 +1,6 @@
-// #ifndef JSON_READ_H
-// #define JSON_READ_H
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <math.h>
 #include "3dmath.h"
 
@@ -40,11 +35,10 @@ typedef struct objValues {
 
 // Structure for images.  Used with color and ppm
 typedef struct Img {
-	double width;
-	double height;
+	int width;
+	int height;
 	char* color;
 } Img;
 
 struct objValues read_scene(FILE* json);
 void ppmMaker(Img *image, FILE* fput, int num);
-//#endif
